@@ -12,7 +12,7 @@
     <artifactId>ratpack-pac4j</artifactId>
     <packaging>jar</packaging>
     <name>pac4j implementation for Ratpack</name>
-    <version>1.4.6-SNAPSHOT</version>
+    <version>1.4.6</version>
     <description>Security library for Ratpck based on pac4j</description>
     <url>https://github.com/pac4j/ratpack-pac4j</url>
 
