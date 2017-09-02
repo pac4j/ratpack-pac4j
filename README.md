@@ -7,7 +7,7 @@ This org.pac4j:ratpack-pac4j library is a mirror of the official Ratpack / pac4j
 pac4j | org.pac4j:ratpack-pac4j | io.ratpack:ratpack-pac4j
 ------|-------------------------|-------------------------
 v1.8.x | v1.4.6 | v1.4.6
-v2.x | v2.x | it doesn't exist
+v2.1.0 | v2.0.0 | it doesn't exist
 
 See the [official documentation](https://ratpack.io/manual/1.4.6/pac4j.html#pac4j) and the [demo](https://github.com/pac4j/ratpack-pac4j-demo).
 
