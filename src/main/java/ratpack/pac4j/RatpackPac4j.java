@@ -513,7 +513,7 @@ public class RatpackPac4j {
     Client<?, ?> client = clients.findClient(clientType);
 
     RatpackWebContext.from(ctx, false).then(webContext -> {
-      webContext.getSession().set(Pac4jSessionKeys.REQUESTED_URL, request.getUri());
+      webContext.getSessionStore().set(webContext, Pac4jSessionKeys.REQUESTED_URL.getName(), request.getUri());
       try {
         client.redirect(webContext);
       } catch (Exception e) {

@@ -12,7 +12,7 @@
     <artifactId>ratpack-pac4j</artifactId>
     <packaging>jar</packaging>
     <name>pac4j implementation for Ratpack</name>
-    <version>2.0.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
     <description>Security library for Ratpck based on pac4j</description>
     <url>https://github.com/pac4j/ratpack-pac4j</url>
 
@@ -66,7 +66,7 @@
     </developers>
 
     <properties>
-        <pac4j.version>2.1.0</pac4j.version>
+        <pac4j.version>3.3.0</pac4j.version>
         <java.version>1.8</java.version>
         <ratpack.version>1.5.0</ratpack.version>
     </properties>
@@ -88,7 +88,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
+                <version>3.8.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>

@@ -19,6 +19,7 @@ package ratpack.pac4j.internal;
 import com.google.common.collect.ImmutableList;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.client.Clients;
+import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.credentials.Credentials;
 import org.pac4j.core.exception.HttpAction;
@@ -57,9 +58,11 @@ public class Pac4jAuthenticator implements Handler {
 
     if (pastBinding.equals(path)) {
       RatpackWebContext.from(ctx, true).flatMap(webContext -> {
-        SessionData sessionData = webContext.getSession();
-        return createClients(ctx, pathBinding).map(clients ->
-          clients.findClient(webContext)
+        SessionData sessionData = ((RatpackSessionStore) webContext.getSessionStore()).getSessionData();
+        return createClients(ctx, pathBinding).map(clients -> {
+            final String clientName = webContext.getRequestParameter(Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER);
+            return clients.findClient(clientName);
+          }
         ).map(
           Types::<Client<Credentials, CommonProfile>>cast
         ).flatMap(client ->

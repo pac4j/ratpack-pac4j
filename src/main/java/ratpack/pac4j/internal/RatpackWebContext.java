@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ratpack.pac4j.internal;
 
 import com.google.common.collect.Iterables;
@@ -34,7 +33,6 @@ import ratpack.http.*;
 import ratpack.server.PublicAddress;
 import ratpack.session.Session;
 import ratpack.session.SessionData;
-import ratpack.util.Exceptions;
 import ratpack.util.MultiValueMap;
 
 import java.net.URI;
@@ -43,7 +41,7 @@ import java.util.*;
 public class RatpackWebContext implements WebContext {
 
   private final Context context;
-  private final SessionData session;
+  private final RatpackSessionStore session;
   private final Request request;
   private final Response response;
   private final Form form;
@@ -52,7 +50,7 @@ public class RatpackWebContext implements WebContext {
 
   public RatpackWebContext(Context ctx, TypedData body, SessionData session) {
     this.context = ctx;
-    this.session = session;
+    this.session = new RatpackSessionStore(session);
     this.request = ctx.getRequest();
     this.response = ctx.getResponse();
 
@@ -75,11 +73,8 @@ public class RatpackWebContext implements WebContext {
   }
 
   @Override
-  public void setSessionStore(final SessionStore sessionStore) { }
-
-  @Override
   public SessionStore getSessionStore() {
-    return null;
+    return this.session;
   }
 
   @Override
@@ -116,25 +111,6 @@ public class RatpackWebContext implements WebContext {
   @Override
   public String getRequestHeader(String name) {
     return request.getHeaders().get(name);
-  }
-
-  @Override
-  public void setSessionAttribute(String name, Object value) {
-    if (value == null) {
-      session.remove(name);
-    } else {
-      Exceptions.uncheck(() -> session.set(name, value, session.getJavaSerializer()));
-    }
-  }
-
-  @Override
-  public Object getSessionAttribute(String name) {
-    return Exceptions.uncheck(() -> session.get(name, session.getJavaSerializer()).orElse(null));
-  }
-
-  @Override
-  public String getSessionIdentifier() {
-    return session.getSession().getId();
   }
 
   @Override
@@ -238,10 +214,6 @@ public class RatpackWebContext implements WebContext {
   @Override
   public String getPath() {
     return request.getPath();
-  }
-
-  public SessionData getSession() {
-    return session;
   }
 
   private URI getAddress() {
