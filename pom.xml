@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -12,7 +13,11 @@
     <artifactId>ratpack-pac4j</artifactId>
     <packaging>jar</packaging>
     <name>pac4j implementation for Ratpack</name>
-    <version>3.0.1-SNAPSHOT</version>
+    <properties>
+        <java.version>9</java.version>
+        <pac4j.version>5.1.4</pac4j.version>
+        <ratpack.version>1.10.0-milestone-4</ratpack.version>
+    </properties>
     <description>Security library for Ratpck based on pac4j</description>
     <url>https://github.com/pac4j/ratpack-pac4j</url>
 
@@ -65,11 +70,7 @@
         </developer>
     </developers>
 
-    <properties>
-        <pac4j.version>3.3.0</pac4j.version>
-        <java.version>1.8</java.version>
-        <ratpack.version>1.6.1</ratpack.version>
-    </properties>
+    <version>5.0.0-SNAPSHOT</version>
 
     <dependencies>
         <dependency>

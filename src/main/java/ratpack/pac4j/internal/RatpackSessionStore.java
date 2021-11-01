@@ -1,5 +1,7 @@
 package ratpack.pac4j.internal;
 
+import java.util.Optional;
+import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import ratpack.session.SessionData;
 import ratpack.util.Exceptions;
@@ -10,7 +12,7 @@ import ratpack.util.Exceptions;
  * @author Jerome Leleu
  * @since 3.0.0
  */
-public class RatpackSessionStore implements SessionStore<RatpackWebContext> {
+public class RatpackSessionStore implements SessionStore {
 
     private final SessionData session;
 
@@ -19,17 +21,18 @@ public class RatpackSessionStore implements SessionStore<RatpackWebContext> {
     }
 
     @Override
-    public String getOrCreateSessionId(final RatpackWebContext context) {
-        return session.getSession().getId();
+    public Optional<String> getSessionId(final WebContext context, boolean createSession) {
+        return Optional.of(session.getSession().getId());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Optional<Object> get(final WebContext context, final String key) {
+        return (Optional<Object>) Exceptions.uncheck(() -> session.get(key, session.getJavaSerializer()));
     }
 
     @Override
-    public Object get(final RatpackWebContext context, final String key) {
-        return Exceptions.uncheck(() -> session.get(key, session.getJavaSerializer()).orElse(null));
-    }
-
-    @Override
-    public void set(final RatpackWebContext context, final String key, final Object value) {
+    public void set(final WebContext context, final String key, final Object value) {
         if (value == null) {
             session.remove(key);
         } else {
@@ -38,22 +41,22 @@ public class RatpackSessionStore implements SessionStore<RatpackWebContext> {
     }
 
     @Override
-    public boolean destroySession(final RatpackWebContext context) {
+    public boolean destroySession(final WebContext context) {
         return false;
     }
 
     @Override
-    public Object getTrackableSession(final RatpackWebContext context) {
-        return null;
+    public Optional<Object> getTrackableSession(final WebContext context) {
+        return Optional.empty();
     }
 
     @Override
-    public SessionStore<RatpackWebContext> buildFromTrackableSession(final RatpackWebContext context, final Object trackableSession) {
-        return null;
+    public Optional<SessionStore> buildFromTrackableSession(final WebContext context, final Object trackableSession) {
+        return Optional.empty();
     }
 
     @Override
-    public boolean renewSession(final RatpackWebContext context) {
+    public boolean renewSession(final WebContext context) {
         return false;
     }
 

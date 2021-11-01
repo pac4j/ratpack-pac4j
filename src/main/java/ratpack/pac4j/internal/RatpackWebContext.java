@@ -20,40 +20,54 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.pac4j.core.context.Cookie;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
-import org.pac4j.core.exception.HttpAction;
+import org.pac4j.core.exception.TechnicalException;
+import org.pac4j.core.exception.http.HttpAction;
+import org.pac4j.core.profile.ProfileManager;
 import ratpack.exec.Promise;
 import ratpack.form.Form;
 import ratpack.form.internal.DefaultForm;
 import ratpack.form.internal.FormDecoder;
 import ratpack.handling.Context;
-import ratpack.http.*;
+import ratpack.http.HttpMethod;
+import ratpack.http.MediaType;
+import ratpack.http.Request;
+import ratpack.http.Response;
+import ratpack.http.TypedData;
 import ratpack.server.PublicAddress;
 import ratpack.session.Session;
 import ratpack.session.SessionData;
 import ratpack.util.MultiValueMap;
 
-import java.net.URI;
-import java.util.*;
-
 public class RatpackWebContext implements WebContext {
 
   private final Context context;
   private final RatpackSessionStore session;
+  private final ProfileManager profileManager;
   private final Request request;
   private final Response response;
   private final Form form;
+  private String body;
 
   private String responseContent = "";
 
   public RatpackWebContext(Context ctx, TypedData body, SessionData session) {
     this.context = ctx;
     this.session = new RatpackSessionStore(session);
+    this.profileManager = new ProfileManager(this, this.session);
     this.request = ctx.getRequest();
     this.response = ctx.getResponse();
-
+    this.body = body != null ? body.getText() : null;
     if (isFormAvailable(request, body)) {
       this.form = FormDecoder.parseForm(ctx, body, MultiValueMap.empty());
     } else {
@@ -65,22 +79,25 @@ public class RatpackWebContext implements WebContext {
     Promise<SessionData> sessionDataPromise = ctx.get(Session.class).getData();
     if (bodyBacked) {
       return ctx.getRequest().getBody().flatMap(body ->
-        sessionDataPromise.map(sessionData -> new RatpackWebContext(ctx, body, sessionData))
+          sessionDataPromise.map(sessionData -> new RatpackWebContext(ctx, body, sessionData))
       );
     } else {
       return sessionDataPromise.map(sessionData -> new RatpackWebContext(ctx, null, sessionData));
     }
   }
 
-  @Override
   public SessionStore getSessionStore() {
     return this.session;
   }
 
+  public ProfileManager getProfileManager() {
+    return profileManager;
+  }
+
   @Override
-  public String getRequestParameter(String name) {
+  public Optional<String> getRequestParameter(String name) {
     return Optional.ofNullable(request.getQueryParams().get(name))
-      .orElseGet(() -> form.get(name));
+        .or(() -> Optional.ofNullable(form.get(name)));
   }
 
   @Override
@@ -99,8 +116,8 @@ public class RatpackWebContext implements WebContext {
   }
 
   @Override
-  public Object getRequestAttribute(String name) {
-    return getRequestAttributes().getAttributes().get(name);
+  public Optional getRequestAttribute(String name) {
+    return Optional.ofNullable(getRequestAttributes().getAttributes().get(name));
   }
 
   @Override
@@ -109,8 +126,8 @@ public class RatpackWebContext implements WebContext {
   }
 
   @Override
-  public String getRequestHeader(String name) {
-    return request.getHeaders().get(name);
+  public Optional<String> getRequestHeader(String name) {
+    return Optional.ofNullable(request.getHeaders().get(name));
   }
 
   @Override
@@ -123,19 +140,24 @@ public class RatpackWebContext implements WebContext {
     return request.getRemoteAddress().getHost();
   }
 
-  @Override
-  public void writeResponseContent(String responseContent) {
-    this.responseContent = responseContent;
-  }
-
-  @Override
-  public void setResponseStatus(int code) {
-    response.status(code);
-  }
+//  @Override
+//  public void writeResponseContent(String responseContent) {
+//    this.responseContent = responseContent;
+//  }
+//
+//  @Override
+//  public void setResponseStatus(int code) {
+//    response.status(code);
+//  }
 
   @Override
   public void setResponseHeader(String name, String value) {
     response.getHeaders().set(name, value);
+  }
+
+  @Override
+  public Optional<String> getResponseHeader(String s) {
+    return Optional.empty();
   }
 
   @Override
@@ -166,6 +188,11 @@ public class RatpackWebContext implements WebContext {
   @Override
   public String getFullRequestURL() {
     return getAddress().toString() + request.getUri();
+  }
+
+  @Override
+  public String getRequestURL() {
+    return WebContext.super.getRequestURL();
   }
 
   public void sendResponse(HttpAction action) {
@@ -216,6 +243,19 @@ public class RatpackWebContext implements WebContext {
     return request.getPath();
   }
 
+  @Override
+  public String getRequestContent() {
+    if (body == null) {
+      throw new TechnicalException("Can't get body for request");
+    }
+    return body;
+  }
+
+  @Override
+  public String getProtocol() {
+    return request.getProtocol();
+  }
+
   private URI getAddress() {
     return context.get(PublicAddress.class).get();
   }
@@ -225,7 +265,8 @@ public class RatpackWebContext implements WebContext {
     return body != null && body.getContentType().isForm() && (method.isPost() || method.isPut());
   }
 
-  private Map<String, List<String>> combineMaps(MultiValueMap<String, String> first, MultiValueMap<String, String> second) {
+  private Map<String, List<String>> combineMaps(MultiValueMap<String, String> first,
+      MultiValueMap<String, String> second) {
     Map<String, List<String>> result = Maps.newLinkedHashMap();
     Set<String> keys = Sets.newLinkedHashSet(Iterables.concat(first.keySet(), second.keySet()));
     for (String key : keys) {
@@ -243,6 +284,7 @@ public class RatpackWebContext implements WebContext {
   }
 
   private class RequestAttributes {
+
     private Map<String, Object> attributes = new HashMap<>();
 
     public Map<String, Object> getAttributes() {
