@@ -27,7 +27,6 @@ import org.pac4j.core.context.WebContext;
 import org.pac4j.core.exception.TechnicalException;
 import org.pac4j.core.exception.http.HttpAction;
 import org.pac4j.core.profile.UserProfile;
-import org.pac4j.core.util.HttpActionHelper;
 import org.pac4j.core.util.Pac4jConstants;
 import ratpack.exec.Blocking;
 import ratpack.exec.Promise;
@@ -70,9 +69,7 @@ public class Pac4jAuthenticator implements Handler {
         ).flatMap(client ->
             getProfile(webContext, client)
         ).map(profile -> {
-          if (profile != null) {
-            webContext.getProfileManager().save(true, profile, false);
-          }
+          profile.ifPresent(userProfile -> webContext.getProfileManager().save(true, userProfile, false));
           Optional<String> originalUrl = sessionData.get(Pac4jSessionKeys.REQUESTED_URL);
           sessionData.remove(Pac4jSessionKeys.REQUESTED_URL);
           return originalUrl;
@@ -113,12 +110,13 @@ public class Pac4jAuthenticator implements Handler {
     return Promise.value(new Clients(absoluteCallbackUrl, clients));
   }
 
-  private Promise<UserProfile> getProfile(WebContext webContext,
+  private Promise<Optional<UserProfile>> getProfile(WebContext webContext,
       Client client) throws HttpAction {
-    return Blocking.get(() -> client.getCredentials(webContext, ((RatpackWebContext) webContext).getSessionStore())
-        .flatMap((credentials -> client.getUserProfile(credentials, webContext,
-            ((RatpackWebContext) webContext).getSessionStore())))
-        .orElseThrow(() -> HttpActionHelper.buildUnauthenticatedAction(webContext)));
+    return Blocking.get(
+        () -> client.getCredentials(webContext, ((RatpackWebContext) webContext).getSessionStore())
+            .flatMap(credentials -> client.getUserProfile(credentials, webContext,
+                ((RatpackWebContext) webContext).getSessionStore()))
+    );
   }
 
 }
