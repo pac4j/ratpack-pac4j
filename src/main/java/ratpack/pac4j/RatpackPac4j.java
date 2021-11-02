@@ -19,6 +19,7 @@ package ratpack.pac4j;
 import static java.util.Arrays.asList;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.pac4j.core.authorization.authorizer.Authorizer;
@@ -206,7 +207,8 @@ public class RatpackPac4j {
           try {
             boolean authorized = true;
             for (Authorizer a : authorizerList) {
-              if (a != null && !a.isAuthorized(webContext, webContext.getSessionStore(), List.of(userProfile))) {
+              if (a != null && !a.isAuthorized(webContext, webContext.getSessionStore(),
+                  Collections.singletonList(userProfile))) {
                 authorized = false;
                 break;
               }
