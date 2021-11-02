@@ -16,12 +16,7 @@
 
 package ratpack.pac4j;
 
-import static java.util.Arrays.asList;
-
 import com.google.common.collect.ImmutableList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import org.pac4j.core.authorization.authorizer.Authorizer;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.client.Clients;
@@ -48,6 +43,12 @@ import ratpack.pac4j.internal.RatpackWebContext;
 import ratpack.path.PathBinding;
 import ratpack.registry.Registry;
 import ratpack.util.Types;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static java.util.Arrays.asList;
 
 /**
  * Provides integration with the <a href="http://www.pac4j.org">Pac4j library</a> for authentication and authorization.
