@@ -70,6 +70,13 @@ public class RatpackWebContext implements WebContext {
     }
   }
 
+  /**
+   * Get the ratpack context.
+   */
+  public Context getContext() {
+    return context;
+  }
+
   public static Promise<RatpackWebContext> from(Context ctx, boolean bodyBacked) {
     Promise<SessionData> sessionDataPromise = ctx.get(Session.class).getData();
     if (bodyBacked) {
