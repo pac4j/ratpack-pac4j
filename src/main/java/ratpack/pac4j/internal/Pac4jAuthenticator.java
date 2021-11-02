@@ -58,12 +58,8 @@ public class Pac4jAuthenticator implements Handler {
         SessionData sessionData = ((RatpackSessionStore) webContext.getSessionStore()).getSessionData();
         return createClients(ctx, pathBinding).map(clients -> {
               final String clientName = webContext.getRequestParameter(Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER).get();
-              final Optional<Client> client = clients.findClient(clientName);
-              if (client.isPresent()) {
-                return client.get();
-              } else {
-                throw new TechnicalException("No default client");
-              }
+              return clients.findClient(clientName)
+                  .orElseThrow(() -> new TechnicalException("No client found for name: " + clientName));
             }
         ).flatMap(client ->
           getProfile(webContext, client)
