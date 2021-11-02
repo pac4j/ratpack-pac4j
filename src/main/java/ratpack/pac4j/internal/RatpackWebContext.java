@@ -52,7 +52,7 @@ public class RatpackWebContext implements WebContext {
   private final Request request;
   private final Response response;
   private final Form form;
-  private String body;
+  private Optional<TypedData> body;
 
   private String responseContent = "";
 
@@ -62,7 +62,7 @@ public class RatpackWebContext implements WebContext {
     this.profileManager = new ProfileManager(this, this.session);
     this.request = ctx.getRequest();
     this.response = ctx.getResponse();
-    this.body = body != null ? body.getText() : null;
+    this.body = Optional.ofNullable(body);
     if (isFormAvailable(request, body)) {
       this.form = FormDecoder.parseForm(ctx, body, MultiValueMap.empty());
     } else {
@@ -234,10 +234,7 @@ public class RatpackWebContext implements WebContext {
 
   @Override
   public String getRequestContent() {
-    if (body == null) {
-      throw new TechnicalException("Can't get body for request");
-    }
-    return body;
+    return body.orElseThrow(() -> new TechnicalException("Can't get body for request")).getText();
   }
 
   @Override
