@@ -146,7 +146,7 @@ public class RatpackWebContext implements WebContext {
 
   @Override
   public Optional<String> getResponseHeader(String s) {
-    return Optional.empty();
+    return Optional.ofNullable(response.getHeaders().get(s));
   }
 
   @Override
