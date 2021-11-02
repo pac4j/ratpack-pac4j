@@ -42,13 +42,7 @@ import ratpack.session.SessionData;
 import ratpack.util.MultiValueMap;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class RatpackWebContext implements WebContext {
 
@@ -80,7 +74,7 @@ public class RatpackWebContext implements WebContext {
     Promise<SessionData> sessionDataPromise = ctx.get(Session.class).getData();
     if (bodyBacked) {
       return ctx.getRequest().getBody().flatMap(body ->
-          sessionDataPromise.map(sessionData -> new RatpackWebContext(ctx, body, sessionData))
+        sessionDataPromise.map(sessionData -> new RatpackWebContext(ctx, body, sessionData))
       );
     } else {
       return sessionDataPromise.map(sessionData -> new RatpackWebContext(ctx, null, sessionData));

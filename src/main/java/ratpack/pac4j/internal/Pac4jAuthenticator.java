@@ -57,8 +57,7 @@ public class Pac4jAuthenticator implements Handler {
       RatpackWebContext.from(ctx, true).flatMap(webContext -> {
         SessionData sessionData = ((RatpackSessionStore) webContext.getSessionStore()).getSessionData();
         return createClients(ctx, pathBinding).map(clients -> {
-              final String clientName = webContext.getRequestParameter(
-                  Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER).get();
+              final String clientName = webContext.getRequestParameter(Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER).get();
               final Optional<Client> client = clients.findClient(clientName);
               if (client.isPresent()) {
                 return client.get();
@@ -67,7 +66,7 @@ public class Pac4jAuthenticator implements Handler {
               }
             }
         ).flatMap(client ->
-            getProfile(webContext, client)
+          getProfile(webContext, client)
         ).map(profile -> {
           profile.ifPresent(userProfile -> webContext.getProfileManager().save(true, userProfile, false));
           Optional<String> originalUrl = sessionData.get(Pac4jSessionKeys.REQUESTED_URL);

@@ -470,8 +470,9 @@ public class RatpackPac4j {
   /**
    * Adapts a Ratpack {@link Context} to a Pac4j {@link WebContext}.
    * <p>
-   * The returned WebContext does not have access to the request body. {@link WebContext#getRequestParameters()} and
-   * associated methods will not include any form parameters if the request was a form.
+   * The returned WebContext does not have access to the request body.
+   * {@link WebContext#getRequestParameters()} and associated methods will not include any
+   * form parameters if the request was a form.
    *
    * @param ctx a Ratpack context
    * @return a Pac4j web context
@@ -488,8 +489,7 @@ public class RatpackPac4j {
       if (type.isInstance(userProfile)) {
         downstream.success(Optional.of(type.cast(userProfile)));
       } else {
-        downstream.error(new ClassCastException(
-            "UserProfile is of type " + userProfile.getClass() + ", and is not compatible with " + type));
+        downstream.error(new ClassCastException("UserProfile is of type " + userProfile.getClass() + ", and is not compatible with " + type));
       }
     } else {
       onEmpty.execute();
