@@ -109,12 +109,11 @@ public class Pac4jAuthenticator implements Handler {
     return Promise.value(new Clients(absoluteCallbackUrl, clients));
   }
 
-  private Promise<Optional<UserProfile>> getProfile(WebContext webContext,
+  private Promise<Optional<UserProfile>> getProfile(RatpackWebContext webContext,
       Client client) throws HttpAction {
     return Blocking.get(
-        () -> client.getCredentials(webContext, ((RatpackWebContext) webContext).getSessionStore())
-            .flatMap(credentials -> client.getUserProfile(credentials, webContext,
-                ((RatpackWebContext) webContext).getSessionStore()))
+        () -> client.getCredentials(webContext, webContext.getSessionStore())
+            .flatMap(credentials -> client.getUserProfile(credentials, webContext, webContext.getSessionStore()))
     );
   }
 
