@@ -44,7 +44,6 @@ import ratpack.path.PathBinding;
 import ratpack.registry.Registry;
 import ratpack.util.Types;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -210,7 +209,7 @@ public class RatpackPac4j {
             boolean authorized = true;
             for (Authorizer a : authorizerList) {
               if (a != null && !a.isAuthorized(webContext, webContext.getSessionStore(),
-                  Collections.singletonList(userProfile))) {
+                  ImmutableList.of(userProfile))) {
                 authorized = false;
                 break;
               }
