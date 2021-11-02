@@ -31,7 +31,6 @@ import org.pac4j.core.exception.TechnicalException;
 import org.pac4j.core.exception.http.HttpAction;
 import org.pac4j.core.exception.http.RedirectionAction;
 import org.pac4j.core.exception.http.WithLocationAction;
-import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.core.profile.UserProfile;
 import ratpack.exec.Blocking;
 import ratpack.exec.Downstream;
@@ -114,8 +113,8 @@ public class RatpackPac4j {
    * This handler performs two different functions, based on whether the given path matches the {@link
    * PathBinding#getPastBinding()} component of the current path binding. If the path matches, the handler will attempt
    * authentication, which may involve redirecting to an external auth provider, which may then redirect back to this
-   * handler. If authentication is successful, the {@link CommonProfile} of the authenticated user will be placed into
-   * the session. The user will then be redirected back to the URL that initiated the authentication.
+   * handler. If authentication is successful, the {@link UserProfile} of the authenticated user will be placed into the
+   * session. The user will then be redirected back to the URL that initiated the authentication.
    * <p>
    * If the path does not match, the handler will push an instance of {@link Clients} into the context registry and pass
    * control downstream. The {@link Clients} instance will be retrieved downstream by any {@link #requireAuth(Class,
@@ -134,14 +133,14 @@ public class RatpackPac4j {
    * <p>
    * This handler can be used to ensure that a user profile is available for all downstream handlers. If there is no
    * user profile present in the session (i.e. user not logged in), authentication will be initiated based on the given
-   * client type (i.e. redirect to the {@link #authenticator(Client[])} handler). If there is a {@link CommonProfile}
+   * client type (i.e. redirect to the {@link #authenticator(Client[])} handler). If there is a {@link UserProfile}
    * present in the session, this handler will push the user profile into the context registry before delegating
-   * downstream. If there is a {@link CommonProfile} present in the context registry, this handler will simply delegate
+   * downstream. If there is a {@link UserProfile} present in the context registry, this handler will simply delegate
    * downstream.
    * <p>
-   * If there is a {@link CommonProfile}, <b>each</b> of the given authorizers will be tested in turn and all must
-   * return true. If so, control will flow to the next handler. Otherwise, a {@code 403} {@link Context#clientError(int)
-   * client error} will be issued.
+   * If there is a {@link UserProfile}, <b>each</b> of the given authorizers will be tested in turn and all must return
+   * true. If so, control will flow to the next handler. Otherwise, a {@code 403} {@link Context#clientError(int) client
+   * error} will be issued.
    * <p>
    * This handler requires a {@link Clients} instance available in the context registry. As such, this handler should be
    * downstream of the {@link #authenticator(Client[])} handler.
@@ -380,9 +379,9 @@ public class RatpackPac4j {
   /**
    * Obtains the logged in user's profile, of the given type, if the user is logged in.
    * <p>
-   * The promised optional will be empty if the user is not authenticated. If there exists a {@link CommonProfile} for
-   * the current user but it is not compatible with the requested type, the returned promise will be a failure with a
-   * {@link ClassCastException}.
+   * The promised optional will be empty if the user is not authenticated. If there exists a {@link UserProfile} for the
+   * current user but it is not compatible with the requested type, the returned promise will be a failure with a {@link
+   * ClassCastException}.
    * <p>
    * This method should be used if the user <i>may</i> have been authenticated. That is, when the the need for the
    * profile is not downstream of an {@link #requireAuth(Class, Authorizer...)} handler, as the auth handler puts the
@@ -402,7 +401,7 @@ public class RatpackPac4j {
         toProfile(type, f, ctx.maybeGet(UserProfile.class), () ->
             webContext(ctx).map((c) -> c.getProfileManager().getProfile())
                 .then(p -> {
-                  p.ifPresent(commonProfile -> ctx.getRequest().add(UserId.class, UserId.of(commonProfile.getId())));
+                  p.ifPresent(userProfile -> ctx.getRequest().add(UserId.class, UserId.of(userProfile.getId())));
                   toProfile(type, f, p, () -> f.success(Optional.<T>empty()));
                 })
         )
