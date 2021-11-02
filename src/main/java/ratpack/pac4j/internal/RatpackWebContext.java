@@ -96,8 +96,12 @@ public class RatpackWebContext implements WebContext {
 
   @Override
   public Optional<String> getRequestParameter(String name) {
-    return Optional.ofNullable(request.getQueryParams().get(name))
-        .or(() -> Optional.ofNullable(form.get(name)));
+    Optional<String> param = Optional.ofNullable(request.getQueryParams().get(name));
+    if(param.isPresent()) {
+      return param;
+    } else {
+      return Optional.ofNullable(form.get(name));
+    }
   }
 
   @Override
@@ -139,16 +143,6 @@ public class RatpackWebContext implements WebContext {
   public String getRemoteAddr() {
     return request.getRemoteAddress().getHost();
   }
-
-//  @Override
-//  public void writeResponseContent(String responseContent) {
-//    this.responseContent = responseContent;
-//  }
-//
-//  @Override
-//  public void setResponseStatus(int code) {
-//    response.status(code);
-//  }
 
   @Override
   public void setResponseHeader(String name, String value) {
@@ -265,8 +259,7 @@ public class RatpackWebContext implements WebContext {
     return body != null && body.getContentType().isForm() && (method.isPost() || method.isPut());
   }
 
-  private Map<String, List<String>> combineMaps(MultiValueMap<String, String> first,
-      MultiValueMap<String, String> second) {
+  private Map<String, List<String>> combineMaps(MultiValueMap<String, String> first, MultiValueMap<String, String> second) {
     Map<String, List<String>> result = Maps.newLinkedHashMap();
     Set<String> keys = Sets.newLinkedHashSet(Iterables.concat(first.keySet(), second.keySet()));
     for (String key : keys) {
@@ -284,7 +277,6 @@ public class RatpackWebContext implements WebContext {
   }
 
   private class RequestAttributes {
-
     private Map<String, Object> attributes = new HashMap<>();
 
     public Map<String, Object> getAttributes() {
