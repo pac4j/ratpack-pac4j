@@ -504,9 +504,11 @@ public class RatpackPac4j {
     RatpackWebContext.from(ctx, false).then(webContext -> {
       webContext.getSessionStore().set(webContext, Pac4jSessionKeys.REQUESTED_URL.getName(), request.getUri());
       try {
-        Optional<RedirectionAction> redirect = client.getRedirectionAction(webContext, webContext.getSessionStore());
-        if (redirect.isPresent() && redirect.get() instanceof WithLocationAction) {
-          ctx.redirect(((WithLocationAction) redirect.get()).getLocation());
+        Optional<WithLocationAction> redirect = client.getRedirectionAction(webContext, webContext.getSessionStore())
+            .filter(x -> x instanceof WithLocationAction).map(x -> (WithLocationAction) x);
+
+        if (redirect.isPresent()) {
+          ctx.redirect(redirect.get().getLocation());
         } else {
           ctx.error(new TechnicalException("Failed to redirect"));
           webContext.sendResponse();
