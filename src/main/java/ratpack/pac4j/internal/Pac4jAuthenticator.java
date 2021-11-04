@@ -80,8 +80,8 @@ public class Pac4jAuthenticator implements Handler {
       });
     } else {
       createClients(ctx, pathBinding).then(clients -> {
-        Registry registry = Registry.singleLazy(Clients.class, () -> uncheck(() -> clients));
-        ctx.next(registry);
+        ctx.getRequest().addLazy(Clients.class, () -> uncheck(() -> clients));
+        ctx.next();
       });
     }
   }
