@@ -72,6 +72,8 @@ public class RatpackWebContext implements WebContext {
 
   /**
    * Get the ratpack context.
+   *
+   * @return the ratpack context
    */
   public Context getContext() {
     return context;
