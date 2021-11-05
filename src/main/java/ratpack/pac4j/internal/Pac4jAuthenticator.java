@@ -16,15 +16,18 @@
 
 package ratpack.pac4j.internal;
 
+import static ratpack.util.Exceptions.uncheck;
+
 import com.google.common.collect.ImmutableList;
+import java.util.List;
+import java.util.Optional;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.client.Clients;
-import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
-import org.pac4j.core.credentials.Credentials;
-import org.pac4j.core.exception.HttpAction;
 import org.pac4j.core.exception.TechnicalException;
-import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.exception.http.HttpAction;
+import org.pac4j.core.profile.UserProfile;
+import org.pac4j.core.util.Pac4jConstants;
 import ratpack.exec.Blocking;
 import ratpack.exec.Promise;
 import ratpack.handling.Context;
@@ -35,11 +38,6 @@ import ratpack.registry.Registry;
 import ratpack.server.PublicAddress;
 import ratpack.session.SessionData;
 import ratpack.util.Types;
-
-import java.util.List;
-import java.util.Optional;
-
-import static ratpack.util.Exceptions.uncheck;
 
 public class Pac4jAuthenticator implements Handler {
 
@@ -55,22 +53,18 @@ public class Pac4jAuthenticator implements Handler {
   public void handle(Context ctx) throws Exception {
     PathBinding pathBinding = ctx.getPathBinding();
     String pastBinding = pathBinding.getPastBinding();
-
     if (pastBinding.equals(path)) {
       RatpackWebContext.from(ctx, true).flatMap(webContext -> {
         SessionData sessionData = ((RatpackSessionStore) webContext.getSessionStore()).getSessionData();
         return createClients(ctx, pathBinding).map(clients -> {
-            final String clientName = webContext.getRequestParameter(Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER);
-            return clients.findClient(clientName);
-          }
-        ).map(
-          Types::<Client<Credentials, CommonProfile>>cast
+              final String clientName = webContext.getRequestParameter(Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER).get();
+              return clients.findClient(clientName)
+                  .orElseThrow(() -> new TechnicalException("No client found for name: " + clientName));
+            }
         ).flatMap(client ->
           getProfile(webContext, client)
         ).map(profile -> {
-          if (profile != null) {
-            sessionData.set(Pac4jSessionKeys.USER_PROFILE, profile);
-          }
+          profile.ifPresent(userProfile -> webContext.getProfileManager().save(true, userProfile, false));
           Optional<String> originalUrl = sessionData.get(Pac4jSessionKeys.REQUESTED_URL);
           sessionData.remove(Pac4jSessionKeys.REQUESTED_URL);
           return originalUrl;
@@ -86,8 +80,8 @@ public class Pac4jAuthenticator implements Handler {
       });
     } else {
       createClients(ctx, pathBinding).then(clients -> {
-        Registry registry = Registry.singleLazy(Clients.class, () -> uncheck(() -> clients));
-        ctx.next(registry);
+        ctx.getRequest().addLazy(Clients.class, () -> uncheck(() -> clients));
+        ctx.next();
       });
     }
   }
@@ -95,9 +89,10 @@ public class Pac4jAuthenticator implements Handler {
   private Promise<Clients> createClients(Context ctx, PathBinding pathBinding) throws Exception {
     String boundTo = pathBinding.getBoundTo();
     PublicAddress publicAddress = ctx.get(PublicAddress.class);
-    String absoluteCallbackUrl = publicAddress.get(b -> b.maybeEncodedPath(boundTo).maybeEncodedPath(path)).toASCIIString();
+    String absoluteCallbackUrl = publicAddress.get(b -> b.maybeEncodedPath(boundTo).maybeEncodedPath(path))
+        .toASCIIString();
 
-    Iterable<? extends Client<?, ?>> result = clientsProvider.get(ctx);
+    Iterable<? extends Client> result = clientsProvider.get(ctx);
 
     @SuppressWarnings("rawtypes")
     List<Client> clients;
@@ -110,11 +105,12 @@ public class Pac4jAuthenticator implements Handler {
     return Promise.value(new Clients(absoluteCallbackUrl, clients));
   }
 
-  private <C extends Credentials, U extends CommonProfile> Promise<U> getProfile(WebContext webContext, Client<C, U> client) throws HttpAction {
-    return Blocking.get(() -> {
-      C credentials = client.getCredentials(webContext);
-      return client.getUserProfile(credentials, webContext);
-    });
+  private Promise<Optional<UserProfile>> getProfile(RatpackWebContext webContext,
+      Client client) throws HttpAction {
+    return Blocking.get(
+        () -> client.getCredentials(webContext, webContext.getSessionStore())
+            .flatMap(credentials -> client.getUserProfile(credentials, webContext, webContext.getSessionStore()))
+    );
   }
 
 }

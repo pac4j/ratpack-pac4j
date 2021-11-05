@@ -23,13 +23,19 @@ import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.pac4j.core.context.Cookie;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
-import org.pac4j.core.exception.HttpAction;
+import org.pac4j.core.exception.TechnicalException;
+import org.pac4j.core.exception.http.HttpAction;
+import org.pac4j.core.profile.ProfileManager;
 import ratpack.exec.Promise;
 import ratpack.form.Form;
 import ratpack.form.internal.DefaultForm;
 import ratpack.form.internal.FormDecoder;
 import ratpack.handling.Context;
-import ratpack.http.*;
+import ratpack.http.HttpMethod;
+import ratpack.http.MediaType;
+import ratpack.http.Request;
+import ratpack.http.Response;
+import ratpack.http.TypedData;
 import ratpack.server.PublicAddress;
 import ratpack.session.Session;
 import ratpack.session.SessionData;
@@ -42,23 +48,33 @@ public class RatpackWebContext implements WebContext {
 
   private final Context context;
   private final RatpackSessionStore session;
+  private final ProfileManager profileManager;
   private final Request request;
   private final Response response;
   private final Form form;
+  private Optional<TypedData> body;
 
   private String responseContent = "";
 
   public RatpackWebContext(Context ctx, TypedData body, SessionData session) {
     this.context = ctx;
     this.session = new RatpackSessionStore(session);
+    this.profileManager = new ProfileManager(this, this.session);
     this.request = ctx.getRequest();
     this.response = ctx.getResponse();
-
+    this.body = Optional.ofNullable(body);
     if (isFormAvailable(request, body)) {
       this.form = FormDecoder.parseForm(ctx, body, MultiValueMap.empty());
     } else {
       this.form = new DefaultForm(MultiValueMap.empty(), MultiValueMap.empty());
     }
+  }
+
+  /**
+   * Get the ratpack context.
+   */
+  public Context getContext() {
+    return context;
   }
 
   public static Promise<RatpackWebContext> from(Context ctx, boolean bodyBacked) {
@@ -72,15 +88,22 @@ public class RatpackWebContext implements WebContext {
     }
   }
 
-  @Override
   public SessionStore getSessionStore() {
     return this.session;
   }
 
+  public ProfileManager getProfileManager() {
+    return profileManager;
+  }
+
   @Override
-  public String getRequestParameter(String name) {
-    return Optional.ofNullable(request.getQueryParams().get(name))
-      .orElseGet(() -> form.get(name));
+  public Optional<String> getRequestParameter(String name) {
+    Optional<String> param = Optional.ofNullable(request.getQueryParams().get(name));
+    if(param.isPresent()) {
+      return param;
+    } else {
+      return Optional.ofNullable(form.get(name));
+    }
   }
 
   @Override
@@ -99,8 +122,8 @@ public class RatpackWebContext implements WebContext {
   }
 
   @Override
-  public Object getRequestAttribute(String name) {
-    return getRequestAttributes().getAttributes().get(name);
+  public Optional getRequestAttribute(String name) {
+    return Optional.ofNullable(getRequestAttributes().getAttributes().get(name));
   }
 
   @Override
@@ -109,8 +132,8 @@ public class RatpackWebContext implements WebContext {
   }
 
   @Override
-  public String getRequestHeader(String name) {
-    return request.getHeaders().get(name);
+  public Optional<String> getRequestHeader(String name) {
+    return Optional.ofNullable(request.getHeaders().get(name));
   }
 
   @Override
@@ -124,18 +147,13 @@ public class RatpackWebContext implements WebContext {
   }
 
   @Override
-  public void writeResponseContent(String responseContent) {
-    this.responseContent = responseContent;
-  }
-
-  @Override
-  public void setResponseStatus(int code) {
-    response.status(code);
-  }
-
-  @Override
   public void setResponseHeader(String name, String value) {
     response.getHeaders().set(name, value);
+  }
+
+  @Override
+  public Optional<String> getResponseHeader(String s) {
+    return Optional.ofNullable(response.getHeaders().get(s));
   }
 
   @Override
@@ -166,6 +184,11 @@ public class RatpackWebContext implements WebContext {
   @Override
   public String getFullRequestURL() {
     return getAddress().toString() + request.getUri();
+  }
+
+  @Override
+  public String getRequestURL() {
+    return WebContext.super.getRequestURL();
   }
 
   public void sendResponse(HttpAction action) {
@@ -214,6 +237,16 @@ public class RatpackWebContext implements WebContext {
   @Override
   public String getPath() {
     return request.getPath();
+  }
+
+  @Override
+  public String getRequestContent() {
+    return body.orElseThrow(() -> new TechnicalException("Can't get body for request")).getText();
+  }
+
+  @Override
+  public String getProtocol() {
+    return request.getProtocol();
   }
 
   private URI getAddress() {
