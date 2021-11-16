@@ -585,7 +585,6 @@ public class RatpackPac4j {
           ctx.redirect(redirect.get().getLocation());
         } else {
           ctx.error(new TechnicalException("Failed to redirect"));
-          webContext.sendResponse();
         }
       } catch (Exception e) {
         if (e instanceof HttpAction) {
