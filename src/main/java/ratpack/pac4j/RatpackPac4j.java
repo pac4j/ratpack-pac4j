@@ -25,6 +25,7 @@ import org.pac4j.core.client.DirectClient;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.exception.TechnicalException;
 import org.pac4j.core.exception.http.HttpAction;
+import org.pac4j.core.exception.http.OkAction;
 import org.pac4j.core.exception.http.RedirectionAction;
 import org.pac4j.core.exception.http.WithLocationAction;
 import org.pac4j.core.profile.UserProfile;
@@ -42,7 +43,6 @@ import ratpack.pac4j.internal.Pac4jAuthenticator;
 import ratpack.pac4j.internal.Pac4jSessionKeys;
 import ratpack.pac4j.internal.RatpackWebContext;
 import ratpack.path.PathBinding;
-import ratpack.registry.Registry;
 import ratpack.util.Types;
 
 import java.util.List;
@@ -578,14 +578,19 @@ public class RatpackPac4j {
     RatpackWebContext.from(ctx, false).then(webContext -> {
       webContext.getSessionStore().set(webContext, Pac4jSessionKeys.REQUESTED_URL.getName(), request.getUri());
       try {
-        Optional<WithLocationAction> redirect = client.getRedirectionAction(webContext, webContext.getSessionStore())
-            .filter(x -> x instanceof WithLocationAction).map(x -> (WithLocationAction) x);
+        Optional<RedirectionAction> action = client.getRedirectionAction(webContext, webContext.getSessionStore());
 
-        if (redirect.isPresent()) {
-          ctx.redirect(redirect.get().getLocation());
+        if (action.isPresent()) {
+          var redirect = action.get();
+          if (redirect instanceof WithLocationAction) {
+            ctx.redirect(((WithLocationAction) redirect).getLocation());
+          } else if (redirect instanceof OkAction) {
+            ctx.render(((OkAction) redirect).getContent());
+          } else {
+            ctx.error(new TechnicalException("Failed to redirect, action was of unknown type: " + redirect));
+          }
         } else {
-          ctx.error(new TechnicalException("Failed to redirect"));
-          webContext.sendResponse();
+          ctx.error(new TechnicalException("Failed to redirect, no redirect action"));
         }
       } catch (Exception e) {
         if (e instanceof HttpAction) {
