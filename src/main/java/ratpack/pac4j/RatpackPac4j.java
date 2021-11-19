@@ -581,14 +581,7 @@ public class RatpackPac4j {
         Optional<RedirectionAction> action = client.getRedirectionAction(webContext, webContext.getSessionStore());
 
         if (action.isPresent()) {
-          var redirect = action.get();
-          if (redirect instanceof WithLocationAction) {
-            ctx.redirect(((WithLocationAction) redirect).getLocation());
-          } else if (redirect instanceof OkAction) {
-            ctx.render(((OkAction) redirect).getContent());
-          } else {
-            ctx.error(new TechnicalException("Failed to redirect, action was of unknown type: " + redirect));
-          }
+          webContext.sendResponse(action.get());
         } else {
           ctx.error(new TechnicalException("Failed to redirect, no redirect action"));
         }

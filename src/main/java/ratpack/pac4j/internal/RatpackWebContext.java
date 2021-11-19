@@ -25,6 +25,8 @@ import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.exception.TechnicalException;
 import org.pac4j.core.exception.http.HttpAction;
+import org.pac4j.core.exception.http.OkAction;
+import org.pac4j.core.exception.http.WithLocationAction;
 import org.pac4j.core.profile.ProfileManager;
 import ratpack.exec.Promise;
 import ratpack.form.Form;
@@ -53,8 +55,6 @@ public class RatpackWebContext implements WebContext {
   private final Response response;
   private final Form form;
   private Optional<TypedData> body;
-
-  private String responseContent = "";
 
   public RatpackWebContext(Context ctx, TypedData body, SessionData session) {
     this.context = ctx;
@@ -194,16 +194,32 @@ public class RatpackWebContext implements WebContext {
   }
 
   public void sendResponse(HttpAction action) {
+    int statusCode = action.getCode();
+
     response.status(action.getCode());
-    sendResponse();
+
+    if(action instanceof WithLocationAction) {
+      context.redirect(((WithLocationAction) action).getLocation());
+    } else if(action instanceof OkAction) {
+      context.render(((OkAction) action).getContent());
+    } else {
+      if (statusCode >= 400) {
+        context.clientError(statusCode);
+      } else {
+        response.send(MediaType.TEXT_HTML, "");
+      }
+    }
   }
 
-  public void sendResponse() {
-    int statusCode = response.getStatus().getCode();
+  public void sendStatusCode(HttpAction action) {
+    int statusCode = action.getCode();
+
+    response.status(action.getCode());
+
     if (statusCode >= 400) {
       context.clientError(statusCode);
     } else {
-      response.send(MediaType.TEXT_HTML, responseContent);
+      response.send(MediaType.TEXT_HTML, "");
     }
   }
 
