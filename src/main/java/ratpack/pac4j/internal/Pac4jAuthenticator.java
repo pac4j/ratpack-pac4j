@@ -107,6 +107,7 @@ public class Pac4jAuthenticator implements Handler {
       Client client) throws HttpAction {
     return Blocking.get(
         () -> client.getCredentials(webContext.callContext())
+            .flatMap(c -> client.validateCredentials(webContext.callContext(), c))
             .flatMap(credentials -> client.getUserProfile(webContext.callContext(), credentials))
     );
   }

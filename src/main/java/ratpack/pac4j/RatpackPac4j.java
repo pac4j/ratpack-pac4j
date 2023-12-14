@@ -622,7 +622,9 @@ public class RatpackPac4j {
 
   private static Optional<UserProfile> userProfileFromCredentials(Client client, RatpackWebContext webContext)
       throws HttpAction {
-    return client.getCredentials(webContext.callContext()).flatMap(
+    return client.getCredentials(webContext.callContext())
+        .flatMap(c -> client.validateCredentials(webContext.callContext(), c))
+        .flatMap(
         credentials -> client.getUserProfile(webContext.callContext(), credentials)
     );
   }
