@@ -60,7 +60,7 @@ public class Pac4jAuthenticator implements Handler {
                   .orElseThrow(() -> new TechnicalException("No client found for name: " + clientName));
             }
         ).flatMap(client ->
-          getProfile(webContext, client)
+            getProfile(webContext, client)
         ).map(profile -> {
           profile.ifPresent(userProfile -> webContext.getProfileManager().save(true, userProfile, false));
           Optional<String> originalUrl = sessionData.get(Pac4jSessionKeys.REQUESTED_URL);
@@ -106,8 +106,8 @@ public class Pac4jAuthenticator implements Handler {
   private Promise<Optional<UserProfile>> getProfile(RatpackWebContext webContext,
       Client client) throws HttpAction {
     return Blocking.get(
-        () -> client.getCredentials(webContext, webContext.getSessionStore())
-            .flatMap(credentials -> client.getUserProfile(credentials, webContext, webContext.getSessionStore()))
+        () -> client.getCredentials(webContext.callContext())
+            .flatMap(credentials -> client.getUserProfile(webContext.callContext(), credentials))
     );
   }
 
