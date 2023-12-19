@@ -20,6 +20,15 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import org.pac4j.core.context.CallContext;
 import org.pac4j.core.context.Cookie;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
@@ -42,9 +51,6 @@ import ratpack.server.PublicAddress;
 import ratpack.session.Session;
 import ratpack.session.SessionData;
 import ratpack.util.MultiValueMap;
-
-import java.net.URI;
-import java.util.*;
 
 public class RatpackWebContext implements WebContext {
 
@@ -88,6 +94,10 @@ public class RatpackWebContext implements WebContext {
     } else {
       return sessionDataPromise.map(sessionData -> new RatpackWebContext(ctx, null, sessionData));
     }
+  }
+
+  public CallContext callContext() {
+    return new CallContext(this, getSessionStore());
   }
 
   public SessionStore getSessionStore() {
